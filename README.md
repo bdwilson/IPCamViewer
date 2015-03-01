@@ -16,7 +16,7 @@ an external drive.
 
 More Info
 ---------
-(https://dl.dropbox.com/u/853747/Jing/2015-02-28_2237.png)
+![Sample shot](https://dl.dropbox.com/u/853747/Jing/2015-02-28_2237.png)
 
 Requirements
 ------------
@@ -61,7 +61,6 @@ Restart Apache.
 <pre>
 $ mysql -u root -p
 Enter Password:
-
 mysql> create database cam; 
 mysql> create user cam;
 mysql> grant all on cam.\* to 'cam'@'localhost' identified by 'cam';
