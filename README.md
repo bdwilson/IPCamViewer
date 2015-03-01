@@ -14,9 +14,10 @@ detection + built NVR capabilities in writing to SMB shares.  This allows me to
 do all of my monitoring (Web server, MySQL, VSFTP, SMB) on a Raspberry Pi with
 an external drive. 
 
-More Info
+Screen Shots
 ---------
 ![Sample shot](https://dl.dropbox.com/u/853747/Jing/2015-02-28_2237.png)
+![Pushover Notification](https://dl.dropboxusercontent.com/u/853747/Jing/IMG_6453.JPG)
 
 Requirements
 ------------
