@@ -92,17 +92,17 @@ mysql> select * from users;
 |   2 | user  | BBBBAAAABBB  |       1 |    0 | pushoverAppIDHere | pushoverAPIKeyHere | 2015-02-28 13:35:54 |
 +-----+-------+--------------+---------+------+-------------------+--------------------+---------------------+
 </pre>
-4. Update users and cameras. Note the the cron script will convert underscores
-to space names for location names, so your FTP directory should be
+4. Create your users and cameras. Note the the cron script will convert
+underscores (\_) to spaces for location names, so your FTP directory should be
 "Front_Porch", but in the database, it should be "Front Porch". If you don't
 have a snapshot URL, then you can leave it blank.  Ignore ranges can be blank
-too if you don't want to ignore any alerts (other than the default
+too if you don't want to suppress any notifications (other than the default
 sunrise/sunset). The first column is auto-increment, so leave that empty like
 below). The week column enables the use of seeing all images for a whole week.
 This will kill your cellular data plan so you might not want to enable it for
-everyone. **User AUTHKEY should be only numbers and letters to simplify
+everyone. User AUTHKEY should be only numbers and letters to simplify
 things. It's not like you're protecting fort knox. This is also why I'm leaving
-the authkey in clear text as a GET. If you don't like it, send me a git pull :)**
+the authkey in clear text as a GET. If you don't like it, send me a git pull :)
 <pre>
 $ mysql -u cam -pcam
 mysql> use cam;
@@ -182,4 +182,5 @@ Bugs/Contact Info
 -----------------
 Bug me on Twitter at [@brianwilson](http://twitter.com/brianwilson) or email me [here](http://cronological.com/comment.php?ref=bubba).
 
+There is also a [thread at IPCamTalk](http://www.ipcamtalk.com/showthread.php?2790-Web-based-viewer-notifier-for-Hikvision-FTP-alerts) where you can find out more info/receive support.
 
