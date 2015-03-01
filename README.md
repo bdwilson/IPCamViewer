@@ -57,7 +57,7 @@ Installation
 directories are for each camera that your FTP server is writing to and NVR_WEB
 to be where you will store your PHP files.  We'll copy these over later below.
 Restart Apache.
-3. Configure MySQL. 
+3. Create MySQL user (assuming you're using root to create the account).
 <pre>
 $ mysql -u root -p
 Enter Password:
@@ -80,7 +80,6 @@ mysql> select * from cameras;
 |   1 | Front Porch |       1 | http://user:password@192.168.2.7/Streaming/channels/1/picture |                                       |
 |   2 | Garage      |       1 | http://user:password@192.168.2.2/Streaming/channels/1/picture | 22-23,3:30-4:30,17:15-17:45,7:15-7:35 |
 +-----+-------------+---------+---------------------------------------------------------------+---------------------------------------+
-
 mysql> select * from users;
 +-----+-------+--------------+---------+------+-------------------+--------------------+---------------------+
 | uid | user  | authkey      | enabled | week | pushoverApp       | pushoverKey        | lastNotify          |
@@ -163,16 +162,16 @@ run nvr_alert.pl by hand from the command line.
 4. Directory layout should look similar to this:
    * FTP Directory
    <pre>
-   /mnt/storage/NVR                <-- Base FTP directory
-                   /Camera         <-- Sub-directory for Camera 1
-                   /Camera_2       <-- Sub-directory for Camera 2
+   /mnt/storage/NVR                 <-- Base FTP directory
+                    /Camera         <-- Sub-directory for Camera 1
+                    /Camera_2       <-- Sub-directory for Camera 2
    </pre>
    * Web Directory
    <pre>
-   /mnt/storage/NVR_WEB		   <-- Base Web Directory
-                       /index.php  <-- PHP Scripts
-                       /config.php 
-                       /image.php  
+   /mnt/storage/NVR_WEB                <-- Base Web Directory
+                           /index.php  <-- PHP Scripts
+                           /config.php 
+                           /image.php  
    </pre>
 
 Bugs/Contact Info
