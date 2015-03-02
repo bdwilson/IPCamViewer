@@ -27,7 +27,9 @@ Requirements
 - Linux system (or Raspberry Pi)
 - [Pushover account](https://pushover.net/) - You will also need to [register
   an application](https://pushover.net/apps/build) and you can use my logo
-(https://pushover.net/icons/TKeuSZYBwATtanz.png). 
+(https://pushover.net/icons/TKeuSZYBwATtanz.png). There is a free trial period
+available so you can see if you like the app; it's awesome and definately money
+well spent.
 - Apache (or webserver you know how to configure) that is Internet accessible
   (or can be opened to the Internet).
 - MySQL (and PHPMyAdmin if you aren't comfortable updating/adding cameras/users
