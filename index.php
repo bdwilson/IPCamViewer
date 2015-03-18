@@ -16,6 +16,9 @@ if (preg_match($ip_net,$_SERVER['REMOTE_ADDR'])) {
 if ($_REQUEST['auth'] && (!preg_match('/^[a-zA-Z0-9]+$/',$_REQUEST['auth']))) {
 	exit;
 }
+if ($_REQUEST['event'] && (!preg_match('/^[0-9]+$/',$_REQUEST['event']))) {
+	exit;
+}
 if (($_REQUEST['snapshot'] > 0) && (!preg_match('/^[0-9]+$/',$_REQUEST['snapshot']))) {
 	exit;
 } 
@@ -24,10 +27,10 @@ $snapshot=$_REQUEST['snapshot'];
 
 if ($token) {
 	$conn = new mysqli($db_server, $db_username, $db_password, $db_database);
-	$stmt = $conn->prepare("select count(uid),week from users where authkey=? and enabled=1");
+	$stmt = $conn->prepare("select count(uid),week,admin from users where authkey=? and enabled=1");
 	$stmt->bind_param("s", $token);
 	$stmt->execute();
-	$stmt->bind_result($auth,$week);
+	$stmt->bind_result($auth,$week,$is_admin);
 	$stmt->fetch();
 }
 
@@ -91,6 +94,20 @@ if ($_REQUEST['suppress'] >= 0 && (preg_match('/^[0-9]+$/',$_REQUEST['suppress']
 	echo "<br><br>";
 	
 } 
+
+if ($is_admin && $auth && $_REQUEST['admin'] == 1) {
+	$conn = new mysqli($db_server, $db_username, $db_password, $db_database);
+	$query="select image,date from images where DATE_SUB(NOW(),INTERVAL $last) <= date order by date desc";
+	$stmt = $conn->prepare($query);
+	#$stmt->bind_param("s", $last);
+	$stmt->execute();
+	$stmt->bind_result($image,$date);
+	#$stmt->fetch();
+	while($stmt->fetch()){
+	    #echo "$image $date\n<br>";
+			$count++;
+	}
+}
 if ($suppress && $token) {
 	?>
 <center>	Suppress alerts for: [
@@ -109,20 +126,25 @@ exit;
 ?>
 <title>Video Camera Monitor</title>
 <center>
-[ <a href="index.php?time=suppress&auth=<?=$_REQUEST['auth']?>">Suppress Alerts</a> | 
-<a href="index.php?auth=<?=$_REQUEST['auth']?>">Last 10 Minutes</a> | 
-<a href="index.php?time=hour&auth=<?=$_REQUEST['auth']?>">Last Hour</a> | 
-<a href="index.php?time=half&auth=<?=$_REQUEST['auth']?>">Last 12 Hours</a> | 
-<a href="index.php?time=day&auth=<?=$_REQUEST['auth']?>">Last 24 Hours</a>
+[ <a href="index.php?events=1&auth=<?=$_REQUEST['auth']?>">Events</a> | 
+<a href="index.php?time=suppress&auth=<?=$_REQUEST['auth']?>">Suppress Alerts</a> | 
+<a href="index.php?auth=<?=$_REQUEST['auth']?>">10 Minutes</a> | 
+<a href="index.php?time=hour&auth=<?=$_REQUEST['auth']?>">Hour</a> | 
+<a href="index.php?time=half&auth=<?=$_REQUEST['auth']?>">12 Hours</a> | 
+<a href="index.php?time=day&auth=<?=$_REQUEST['auth']?>">24 Hours</a>
 <?php 
 	if ($week == 1) {
 ?>
-| <a href="index.php?time=week&auth=<?=$_REQUEST['auth']?>">Last Week</a> ]
+| <a href="index.php?time=week&auth=<?=$_REQUEST['auth']?>">Last Week</a>
 <?php 
-	} else {
-		echo " ]";
+	}
+	if ($is_admin == 1) {
+?>
+| <a href="index.php?admin=1&auth=<?=$_REQUEST['auth']?>">Admin</a>
+<?php
 	}
 ?>
+] 
 <?php
 	$conn = new mysqli($db_server, $db_username, $db_password, $db_database);
 	$stmt = $conn->prepare("select cid,location from cameras where enabled=1 and snapshot_url != ''");
@@ -148,18 +170,62 @@ exit;
 
 if ($snapshot > 0) {
 	echo "<a border=0 href=image.php?&snapshot=" . $snapshot .  "&auth=". $_REQUEST['auth'] . "><center><img width=100% src=image.php?snapshot=". $snapshot . "&auth=" . $_REQUEST['auth'] . "></a>";
+} else if ($_REQUEST['events'] == 1) {
+	$count=0;
+	$conn = new mysqli($db_server, $db_username, $db_password, $db_database);
+	$query="select distinct(eventId) from images where 1 order by date desc";
+	$stmt = $conn->prepare($query);
+	$stmt->execute();
+	$stmt->bind_result($eventId);
+	while($stmt->fetch()){
+		$count++;
+		$conn2 = new mysqli($db_server, $db_username, $db_password, $db_database);
+		$query2="select max(date),min(date),count(id),UNIX_TIMESTAMP(max(date)),UNIX_TIMESTAMP(min(date)) from images where eventId=?";
+		$stmt2 = $conn2->prepare($query2);
+		$stmt2->bind_param("s", $eventId);
+		$stmt2->execute();
+		$stmt2->bind_result($max,$min,$ecount,$unix_max,$unix_min);
+		if ($count == 1) {
+			?><table width=40% border=1 cellspacing=0 cellpadding=0><tr>
+			<td><center><b>EventID</td>
+			<td><center><b>Number of Images</td>
+                        <td><center><b>Start Time</td>
+			<td><center><b>Stop Time</td>
+			<td><center><b>Seconds</td></tr>
+				<?php
+		}
+		#	echo "$unix_max $unix_min ($secs)<br>";
+		while($stmt2->fetch()){
+			$eurl = "?event=" . $eventId . "&auth=" . $_REQUEST['auth']; 
+			$secs=$unix_max-$unix_min;
+                 	?><tr><td align=center><a border=0 href="<?=$eurl?>"><?=$eventId?></a></td>
+			  <td><center><?=$ecount?></td><td><center><?=$min?></td><td><center><?=$max?></td>
+			  <td><center><?=$secs?></td></tr>
+		<?php
+		}
+	}
 } else {
 	$count=0;
+	$conn = new mysqli($db_server, $db_username, $db_password, $db_database);
+	$query="select max(eventId) from images";
+	$stmt = $conn->prepare($query);
+	$stmt->execute();
+	$stmt->bind_result($eventId);
 	# if someone has viewed the images on the web, mark them as being
 	# notified.  
 	$conn = new mysqli($db_server, $db_username, $db_password, $db_database);
-	$stmt = $conn->prepare("update images set notified=1 where notified=0");
+	$stmt = $conn->prepare("update images set notified=1,eventId=? where notified=0");
+	$stmt->bind_param("s", $eventId);
 	$stmt->execute();
-	# 
 	$conn = new mysqli($db_server, $db_username, $db_password, $db_database);
-	$query="select image,date from images where DATE_SUB(NOW(),INTERVAL $last) <= date order by date desc";
-	$stmt = $conn->prepare($query);
-	#$stmt->bind_param("s", $last);
+	if ($_REQUEST['event']) {
+		$query="select image,date from images where eventId=? order by date desc";
+		$stmt = $conn->prepare($query);
+		$stmt->bind_param("s", $_REQUEST['event']);
+	} else {
+		$query="select image,date from images where DATE_SUB(NOW(),INTERVAL $last) <= date order by date desc";
+		$stmt = $conn->prepare($query);
+	}
 	$stmt->execute();
 	$stmt->bind_result($image,$date);
 	#$stmt->fetch();

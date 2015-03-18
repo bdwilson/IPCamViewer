@@ -41,6 +41,7 @@ well spent.
 - Some method of calling the alert script (cronjob or via e-mail based procmail
   trigger)
 - Perl (and these modules: File::Basename File::Find File::stat Date::Manip Time::localtime LWP::UserAgent Astro::Sunrise Data::Dumper DBI)
+- Optional iOS App [GeoHopper](https://itunes.apple.com/us/app/geohopper/id605160102?mt=8) helps identify if the user is home or away
 
 I recommend installing [cpanminus](https://github.com/miyagawa/cpanminus) and
 installing the Perl modules that way, or you can intall them via your distro
@@ -77,22 +78,25 @@ Then install the DB schema.
 <pre>
 $ mysql -u cam -pcam cam < cam.sql
 </pre>
-Now you can see an example of my data.
+Now you can see an example of my data. ignoreHome and ignoreAway should be set
+to 0 unless you want to ignore/suppress events if someone is either Home or
+all users are Away. If you want to suppress events for the camera, then toggle
+these to 1 instead of 0. These variable rely on the GeoHopper dependancy.
 <pre>
 mysql> select * from cameras;
-+-----+-------------+---------+---------------------------------------------------------------+---------------------------------------+
-| cid | location    | enabled | snapshot_url                                                  | ignore_ranges                         |
-+-----+-------------+---------+---------------------------------------------------------------+---------------------------------------+
-|   1 | Front Porch |       1 | http://user:password@192.168.2.7/Streaming/channels/1/picture |                                       |
-|   2 | Garage      |       1 | http://user:password@192.168.2.2/Streaming/channels/1/picture | 22-23,3:30-4:30,17:15-17:45,7:15-7:35 |
-+-----+-------------+---------+---------------------------------------------------------------+---------------------------------------+
++-----+-------------+---------+---------------------------------------------------------------------+-----------------+------------+------------+
+| cid | location    | enabled | snapshot_url 							    | ignore_ranges   | ignoreHome | ignoreAway |
++-----+-------------+---------+---------------------------------------------------------------------+-----------------+------------+------------+
+|   1 | Front Porch |       1 | http://user:password@192.168.2.7/Streaming/channels/1/picture       |                 |          0 |          0 |
+|   2 | Garage      |       1 | http://user:password@192.168.2.2/Streaming/channels/1/picture       | 22-23,3:30-4:30 |          0 |          0 |
++-----+-------------+---------+---------------------------------------------------------------------+-----------------+------------+------------+
 mysql> select * from users;
-+-----+-------+--------------+---------+------+-------------------+--------------------+---------------------+
-| uid | user  | authkey      | enabled | week | pushoverApp       | pushoverKey        | lastNotify          |
-+-----+-------+--------------+---------+------+-------------------+--------------------+---------------------+
-|   1 | admin | AAAAABBBAAAA |       1 |    1 | pushoverAppIDHere | pushoverAPIKeyHere | 2015-02-28 13:35:54 |
-|   2 | user  | BBBBAAAABBB  |       1 |    0 | pushoverAppIDHere | pushoverAPIKeyHere | 2015-02-28 13:35:54 |
-+-----+-------+--------------+---------+------+-------------------+--------------------+---------------------+
++-----+--------+-----------------+---------+-------+------+--------------------------------+--------------------------------+---------------------+--------+---------------------+
+| uid | user   | authkey         | enabled | admin | week | pushoverApp                    | pushoverKey                    | lastNotify          | isHome | homeTime            |
++-----+--------+-----------------+---------+-------+------+--------------------------------+--------------------------------+---------------------+--------+---------------------+
+|   1 | admin  | AAAAABBBAAAA    |       1 |     1 |    1 | pushoverAppIDHere              | pushoverAPIKeyHere             | 2015-03-17 21:24:47 |      1 | 2015-03-17 17:10:51 |
+|   2 | user   | BBBBAAAABBB     |       1 |     0 |    0 | pushoverAppIDHere              | pushoverAPIKeyHere             | 2015-03-17 21:24:48 |      1 | 2015-03-17 14:55:54 |
++-----+--------+-----------------+---------+-------+------+--------------------------------+--------------------------------+---------------------+--------+---------------------+
 </pre>
 4. Create your users and cameras. Note the the cron script will convert
 underscores (\_) to spaces for location names, so your FTP directory should be
@@ -108,10 +112,10 @@ the authkey in clear text as a GET. If you don't like it, send me a git pull :)
 <pre>
 $ mysql -u cam -pcam
 mysql> use cam;
-mysql> insert into cameras VALUES("","Front Porch","1","http://user:password@192.168.2.7/Streaming/channels/1/picture","");
-mysql> insert into cameras VALUES("","Back Porch","1","http://user:password@192.168.2.7/Streaming/channels/1/picture","17-18,4:30-5:30");
-mysql> insert into users VALUES("","user1","8675309","1","0","YOUR_PUSHOVER_APP_ID_HERE","YOUR_PUSHOVER_API_KEY_HERE","");
-mysql> insert into users VALUES("","user2","C3PO","1","1","YOUR_PUSHOVER_APP_ID_HERE","YOUR_PUSHOVER_API_KEY_HERE","");
+mysql> insert into cameras VALUES("","Front Porch","1","http://user:password@192.168.2.7/Streaming/channels/1/picture","",0,0);
+mysql> insert into cameras VALUES("","Back Porch","1","http://user:password@192.168.2.7/Streaming/channels/1/picture","17-18,4:30-5:30",0,0);
+mysql> insert into users VALUES("","user1","8675309","1","0","YOUR_PUSHOVER_APP_ID_HERE","YOUR_PUSHOVER_API_KEY_HERE","",0,"");
+mysql> insert into users VALUES("","user2","C3PO","1","1","YOUR_PUSHOVER_APP_ID_HERE","YOUR_PUSHOVER_API_KEY_HERE","",0,"");
 mysql> quit
 </pre>
 5. Copy config.php, index.php and image.php to the NVR_WEB location you
@@ -120,7 +124,7 @@ the Alias location where the images will be surfaced from (i.e. where your FTP
 server is writing files).  Set *ip_net* to be a regex to match your local IP
 network if you want to bypass auth from that network. If you don't want to
 bypass auth on your local net, set this to be */^256.256.256.\d+$/*.
-6. Edit nvr_alert.pl and do the following:
+6. Edit nvr_alert.pl and modify/point to nvr_alert.cfg do the following:
    * Configure your *lat* and *long* to correctly configure sunrise/sunset
 times. (maps.google.com) can help you if you look for your address then get the
 lat/long from the URL.
@@ -143,6 +147,10 @@ the Internet.
 nofications. This is mainly for if the job is run by an external script (such
 as procmail or snmptrap). If you're running this from cron, just set this to
 the same number of minutes the cronjob is run as.  
+   * *geohopper* options should be self explanitory.  You need to install the
+iOS app, create a Web Service item that points to your
+url/geohopper.php?auth=YOURAUTHID. Next, create a location called "Home", then
+link the Web Service entry to your "Home" location.  
    * database info should match config.php and the info you used to create your 
 database and user from the initial steps.
 7. Make sure you can get to index.php without any errors. You can always
@@ -179,6 +187,7 @@ run nvr_alert.pl by hand from the command line.
                            /config.php 
                            /image.php  
    </pre>
+5. Check your log.
 
 Bugs/Contact Info
 -----------------
