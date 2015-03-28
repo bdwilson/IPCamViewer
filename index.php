@@ -146,6 +146,18 @@ exit;
 ?>
 ] 
 <?php
+	# if someone has viewed the images on the web, mark them as being
+	# notified.  
+	$conn = new mysqli($db_server, $db_username, $db_password, $db_database);
+	$stmt = $conn->prepare("select max(eventId) from images");
+	$stmt->execute();
+	$stmt->bind_result($eventId);
+        $stmt->fetch();
+	$conn = new mysqli($db_server, $db_username, $db_password, $db_database);
+	$stmt = $conn->prepare("update images set eventId=? where eventId=0");
+	$stmt->bind_param("s", $eventId);
+	$stmt->execute();
+
 	$conn = new mysqli($db_server, $db_username, $db_password, $db_database);
 	$stmt = $conn->prepare("select cid,location from cameras where enabled=1 and snapshot_url != ''");
 	#$stmt->bind_param("s", $location);
@@ -173,6 +185,30 @@ if ($snapshot > 0) {
 } else if ($_REQUEST['events'] == 1) {
 	$count=0;
 	$conn = new mysqli($db_server, $db_username, $db_password, $db_database);
+	$query="select distinct(user),lastNotify,isHome,homeTime from users";
+	$stmt = $conn->prepare($query);
+	$stmt->execute();
+	$stmt->bind_result($user,$lastNotify,$isHome,$homeTime);
+	while($stmt->fetch()){
+		$count++;
+		if ($count == 1) {
+			?><table width=40% border=1 cellspacing=0 cellpadding=0><tr>
+			<td><center><b>User</td>
+			<td><center><b>Last Push Notification</td>
+			<td><center><b>Status</td></tr>
+				<?php
+		}
+		if ($isHome > 0) {
+			$status = "<font color=green>Arrived</font> at home at $homeTime";
+		} else {
+			$status = "<font color=red>Departed</font> home at $homeTime";
+		}
+                 ?><tr><td align=center><?=$user?></td><td><center><?=$lastNotify?></td><td><center><?=$status?></td></tr>
+		<?php
+	}
+	echo "</table><br>";
+	$count=0;
+	$conn = new mysqli($db_server, $db_username, $db_password, $db_database);
 	$query="select distinct(eventId) from images where 1 order by date desc";
 	$stmt = $conn->prepare($query);
 	$stmt->execute();
@@ -180,11 +216,11 @@ if ($snapshot > 0) {
 	while($stmt->fetch()){
 		$count++;
 		$conn2 = new mysqli($db_server, $db_username, $db_password, $db_database);
-		$query2="select max(date),min(date),count(id),UNIX_TIMESTAMP(max(date)),UNIX_TIMESTAMP(min(date)) from images where eventId=?";
+		$query2="select max(date),min(date),count(id),UNIX_TIMESTAMP(max(date)),UNIX_TIMESTAMP(min(date)),notified from images where eventId=?";
 		$stmt2 = $conn2->prepare($query2);
 		$stmt2->bind_param("s", $eventId);
 		$stmt2->execute();
-		$stmt2->bind_result($max,$min,$ecount,$unix_max,$unix_min);
+		$stmt2->bind_result($max,$min,$ecount,$unix_max,$unix_min,$notified);
 		if ($count == 1) {
 			?><table width=40% border=1 cellspacing=0 cellpadding=0><tr>
 			<td><center><b>EventID</td>
@@ -198,7 +234,12 @@ if ($snapshot > 0) {
 		while($stmt2->fetch()){
 			$eurl = "?event=" . $eventId . "&auth=" . $_REQUEST['auth']; 
 			$secs=$unix_max-$unix_min;
-                 	?><tr><td align=center><a border=0 href="<?=$eurl?>"><?=$eventId?></a></td>
+			if ($notified > 0) {
+				$notified="<font color=red>*</font>";
+			} else {
+				$notified="";
+			}
+                 	?><tr><td align=center><a border=0 href="<?=$eurl?>"><?=$eventId?></a><?=$notified?></td>
 			  <td><center><?=$ecount?></td><td><center><?=$min?></td><td><center><?=$max?></td>
 			  <td><center><?=$secs?></td></tr>
 		<?php
@@ -207,27 +248,16 @@ if ($snapshot > 0) {
 } else {
 	$count=0;
 	$conn = new mysqli($db_server, $db_username, $db_password, $db_database);
-	$query="select max(eventId) from images";
-	$stmt = $conn->prepare($query);
-	$stmt->execute();
-	$stmt->bind_result($eventId);
-	# if someone has viewed the images on the web, mark them as being
-	# notified.  
-	$conn = new mysqli($db_server, $db_username, $db_password, $db_database);
-	$stmt = $conn->prepare("update images set notified=1,eventId=? where notified=0");
-	$stmt->bind_param("s", $eventId);
-	$stmt->execute();
-	$conn = new mysqli($db_server, $db_username, $db_password, $db_database);
 	if ($_REQUEST['event']) {
-		$query="select image,date from images where eventId=? order by date desc";
+		$query="select image,date,notified from images where eventId=? order by date desc";
 		$stmt = $conn->prepare($query);
 		$stmt->bind_param("s", $_REQUEST['event']);
 	} else {
-		$query="select image,date from images where DATE_SUB(NOW(),INTERVAL $last) <= date order by date desc";
+		$query="select image,date,notified from images where DATE_SUB(NOW(),INTERVAL $last) <= date order by date desc";
 		$stmt = $conn->prepare($query);
 	}
 	$stmt->execute();
-	$stmt->bind_result($image,$date);
+	$stmt->bind_result($image,$date,$notified);
 	#$stmt->fetch();
 	while($stmt->fetch()){
 	    #echo "$image $date\n<br>";
@@ -244,6 +274,9 @@ if ($snapshot > 0) {
 				#echo date('l m/d/y g:i:s A ', strtotime($key));
 				#echo date('l m/d/y g:i:s A ',$key);
 				echo $date;
+				if ($notified > 0) {
+					echo "<font color=red>*</font>";
+				}
 				echo "</td>";
 			} else {
 			?>
@@ -253,6 +286,9 @@ if ($snapshot > 0) {
 				#echo date('l m/d/y g:i:s A ', strtotime($key));
 				#echo date('l m/d/y g:i:s A ', $key);
 				echo $date;
+				if ($notified > 0) {
+					echo "<font color=red>*</font>";
+				}
 				echo "</td></tr>";
 			}
 			#print "$key\n";

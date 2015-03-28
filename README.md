@@ -161,11 +161,22 @@ having issues.
 <pre>
 \*/5 \* \* \* \* /mnt/storage/NVR/bin/nvr_alert.pl
 </pre>
-Another option would be setup your camera to email your local machine, then
-process those messages with procmail and have procmail trigger nvr_alert.pl.
+Another option (which is what I do) is to setup your camera to email your
+Raspberry Pi/Linux box, then process those messages with procmail and have procmail trigger nvr_alert.pl.
 If you choose to go that route, you can use the nvr_procmail.sh script to call
 nvr_alert.pl.  It will keep more than 1 instance from running at a time and
-give 30 seconds for images from an "event" to roll in.
+give 60 seconds for images from an "event" to roll in. This method also helps
+when using Geohopper since it essentially gives the system 60 seconds for you
+to "leave" or "arrive" at your Home before calling nvr_alert.pl, thus your
+Geohopper suppression will work better.  You'll have to setup a user on your
+Linux machine, configure a Mail daemon to receive mail, make sure procmail is
+installed and enabled for your mailer, and then setup a .procmailrc file that
+should at least have something like this:
+<pre>
+:0
+* ^From:.*nvr@raspberrypi.mydomain.*
+| /storage/samba/Pictures/NVR/nvr_procmail.sh
+</pre>
 
 Debugging
 -----------
@@ -188,6 +199,9 @@ run nvr_alert.pl by hand from the command line.
                            /image.php  
    </pre>
 5. Check your log.
+6. Contact me for help (see below). It's alot harder to explain and document
+software for someone else than it is to just do it for yourself, so I'm sure I
+left something out.
 
 Bugs/Contact Info
 -----------------
