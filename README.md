@@ -170,13 +170,8 @@ when using Geohopper since it essentially gives the system 60 seconds for you
 to "leave" or "arrive" at your Home before calling nvr_alert.pl, thus your
 Geohopper suppression will work better.  You'll have to setup a user on your
 Linux machine, configure a Mail daemon to receive mail, make sure procmail is
-installed and enabled for your mailer, and then setup a .procmailrc file that
-should at least have something like this:
-<code>
-:0
-* ^From:.*nvr@raspberrypi.mydomain.*
-| /storage/samba/Pictures/NVR/nvr_procmail.sh
-</code>
+installed and enabled for your mailer, and then setup a .procmailrc (see
+comments in nvr_procmail.sh for more info).
 
 Debugging
 -----------
