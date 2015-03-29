@@ -172,11 +172,11 @@ Geohopper suppression will work better.  You'll have to setup a user on your
 Linux machine, configure a Mail daemon to receive mail, make sure procmail is
 installed and enabled for your mailer, and then setup a .procmailrc file that
 should at least have something like this:
-<pre>
+<code>
 :0
 * ^From:.*nvr@raspberrypi.mydomain.*
 | /storage/samba/Pictures/NVR/nvr_procmail.sh
-</pre>
+</code>
 
 Debugging
 -----------
