@@ -64,7 +64,7 @@ if ($_REQUEST['suppress'] >= 0 && (preg_match('/^[0-9]+$/',$_REQUEST['suppress']
 	$dateFormatted = $objDateTime->format('Y-m-d H:i:s');
 	if ($mins == 0) {
 		$conn = new mysqli($db_server, $db_username, $db_password, $db_database);
-		$stmt = $conn->prepare("delete from suppress where where authkey=?");
+		$stmt = $conn->prepare("delete from suppress where authkey=?");
 		$stmt->bind_param("s",$token);
 		$stmt->execute();
 		echo "<center>Cleared alert suppression\n";
@@ -77,19 +77,20 @@ if ($_REQUEST['suppress'] >= 0 && (preg_match('/^[0-9]+$/',$_REQUEST['suppress']
 		$stmt->execute();
         	$stmt->store_result();
         	$count = $stmt->num_rows;
-	}
-	if ($count>0) {
-		$conn = new mysqli($db_server, $db_username, $db_password, $db_database);
-		$stmt = $conn->prepare("update suppress set expiration=? where authkey=?");
-		$stmt->bind_param("ss", $dateFormatted,$token);
-		$stmt->execute();
-		echo "<center>Updated alert suppression until $dateFormatted.";
-	} else {
-		$conn = new mysqli($db_server, $db_username, $db_password, $db_database);
-		$stmt = $conn->prepare("insert into suppress VALUES(?,?)");
-		$stmt->bind_param("ss", $token,$dateFormatted);
-		$stmt->execute();
-		echo "<center>Set alert suppression until $dateFormatted.";
+
+		 if ($count>0) {
+			$conn = new mysqli($db_server, $db_username, $db_password, $db_database);
+			$stmt = $conn->prepare("update suppress set expiration=? where authkey=?");
+			$stmt->bind_param("ss", $dateFormatted,$token);
+			$stmt->execute();
+			echo "<center>Updated alert suppression until $dateFormatted.";
+	 	} else {
+			$conn = new mysqli($db_server, $db_username, $db_password, $db_database);
+			$stmt = $conn->prepare("insert into suppress VALUES(?,?)");
+			$stmt->bind_param("ss", $token,$dateFormatted);
+			$stmt->execute();
+			echo "<center>Set alert suppression until $dateFormatted.";
+	 	}
 	}
 	echo "<br><br>";
 	
