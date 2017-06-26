@@ -17,10 +17,10 @@ an external drive.
 Screen Shots
 ---------
 Web Interface
-![Sample shot](https://dl.dropbox.com/u/853747/Jing/2015-02-28_2237.png)
+![Sample shot](https://www.dropbox.com/s/fqjzc8eof880j8b/2015-02-28_2237.png?dl=1)
 
 Pushover Notification (iOS)
-![Pushover Notification](https://dl.dropboxusercontent.com/u/853747/Jing/IMG_6453.JPG)
+![Pushover Notification](https://www.dropbox.com/s/4r44puqnsmk4kn5/IMG_6453.JPG?dl=1)
 
 Requirements
 ------------
