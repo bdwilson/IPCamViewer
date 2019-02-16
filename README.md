@@ -17,10 +17,11 @@ an external drive.
 Screen Shots
 ---------
 Web Interface
-![Sample shot](https://www.dropbox.com/s/fqjzc8eof880j8b/2015-02-28_2237.png?dl=1)
+![Sample shot](https://bdwilson.github.io/images/ipcamviewer1.png)
+![Sample shot2](https://bdwilson.github.io/images/ipcamviewer2.png)
 
 Pushover Notification (iOS)
-![Pushover Notification](https://www.dropbox.com/s/4r44puqnsmk4kn5/IMG_6453.JPG?dl=1)
+![Pushover Notification](https://bdwilson.github.io/images/ipcamviewer3.png)
 
 Requirements
 ------------
@@ -42,6 +43,7 @@ well spent.
   trigger)
 - Perl (and these modules: File::Basename File::Find File::stat Date::Manip Time::localtime LWP::UserAgent Astro::Sunrise Data::Dumper DBI)
 - Optional iOS App [GeoHopper](https://itunes.apple.com/us/app/geohopper/id605160102?mt=8) helps identify if the user is home or away
+- Optional PIR (Passive Infared) sensor support via [Hubitat/SmartThings](https://raw.githubusercontent.com/bdwilson/hubitat/master/NotifyIfMotion/NotifyIfMotion-App.groovy) virtually elminate false postives from the cameras. 
 
 I recommend installing [cpanminus](https://github.com/miyagawa/cpanminus) and
 installing the Perl modules that way, or you can intall them via your distro
@@ -58,6 +60,11 @@ sudo cpanm File::Basename File::Find File::stat Date::Manip Time::localtime LWP:
 
 Installation
 --------------------
+NOTE: If you're running a previous version (before 2/2019), you'll need to blow
+away your database and start over. I added eventID to the images table
+and pirName and pirTime to the cameras table. If you can figure this out
+without blowing away your db, mazeltov!
+
 1. Install Perl modules.
 2. Configure your webserver. For Apache, place cam.conf in
 /etc/apache2/sites-enabled and change the NVR location to the base location where
@@ -84,12 +91,12 @@ all users are Away. If you want to suppress events for the camera, then toggle
 these to 1 instead of 0. These variable rely on the GeoHopper dependancy.
 <pre>
 mysql> select * from cameras;
-+-----+-------------+---------+---------------------------------------------------------------------+-----------------+------------+------------+
-| cid | location    | enabled | snapshot_url 							    | ignore_ranges   | ignoreHome | ignoreAway |
-+-----+-------------+---------+---------------------------------------------------------------------+-----------------+------------+------------+
-|   1 | Front Porch |       1 | http://user:password@192.168.2.7/Streaming/channels/1/picture       |                 |          0 |          0 |
-|   2 | Garage      |       1 | http://user:password@192.168.2.2/Streaming/channels/1/picture       | 22-23,3:30-4:30 |          0 |          0 |
-+-----+-------------+---------+---------------------------------------------------------------------+-----------------+------------+------------+
++-----+-------------+---------+---------------------------------------------------------------------+-----------------+------------+----------------------+-------------+
+| cid | location    | enabled | snapshot_url 							                            | ignore_ranges   | ignoreHome | ignoreAway | pirName | pirTime     |
++-----+-------------+---------+---------------------------------------------------------------------+-----------------+------------+------------+---------+-------------+
+|   1 | Front Porch |       1 | http://user:password@192.168.2.7/Streaming/channels/1/picture       |                 |          0 |          0 |         |             |
+|   2 | Garage      |       1 | http://user:password@192.168.2.2/Streaming/channels/1/picture       | 22-23,3:30-4:30 |          0 |          0 |         |             |
++-----+-------------+---------+---------------------------------------------------------------------+-----------------+------------+------------+---------+-------------+
 mysql> select * from users;
 +-----+--------+-----------------+---------+-------+------+--------------------------------+--------------------------------+---------------------+--------+---------------------+
 | uid | user   | authkey         | enabled | admin | week | pushoverApp                    | pushoverKey                    | lastNotify          | isHome | homeTime            |
@@ -108,12 +115,19 @@ below). The week column enables the use of seeing all images for a whole week.
 This will kill your cellular data plan so you might not want to enable it for
 everyone. User AUTHKEY should be only numbers and letters to simplify
 things. It's not like you're protecting fort knox. This is also why I'm leaving
-the authkey in clear text as a GET. If you don't like it, send me a git pull :)
+the authkey in clear text as a GET. If you don't like it, send me a git pull.
+Also you have optional pirName and pirTime fields; these are updated from
+zwave/zigbee PIR sensors connected (theoretically) near your cameras reporting
+to Hubitat/Smartthings. This helps you eliminate false positives with a motion
+sensing camera by adding passive infared to the mix. For more info on those,
+look at the commments in hubitat.php. If you have multiple cameras in a
+single location, you can use one PIR sensor by giving them the same name
+(GarageSensor) if you have 2 cameras by the garage + 1 PIR sensor. 
 <pre>
 $ mysql -u cam -pcam
 mysql> use cam;
-mysql> insert into cameras VALUES("","Front Porch","1","http://user:password@192.168.2.7/Streaming/channels/1/picture","",0,0);
-mysql> insert into cameras VALUES("","Back Porch","1","http://user:password@192.168.2.7/Streaming/channels/1/picture","17-18,4:30-5:30",0,0);
+mysql> insert into cameras VALUES("","Front Porch","1","http://user:password@192.168.2.7/Streaming/channels/1/picture","",0,0,"","");
+mysql> insert into cameras VALUES("","Back Porch","1","http://user:password@192.168.2.7/Streaming/channels/1/picture","17-18,4:30-5:30",0,0,"","");
 mysql> insert into users VALUES("","user1","8675309","1","0","YOUR_PUSHOVER_APP_ID_HERE","YOUR_PUSHOVER_API_KEY_HERE","",0,"");
 mysql> insert into users VALUES("","user2","C3PO","1","1","YOUR_PUSHOVER_APP_ID_HERE","YOUR_PUSHOVER_API_KEY_HERE","",0,"");
 mysql> quit
@@ -160,6 +174,9 @@ having issues.
 *max_notify_interval* is set to 5.
 <pre>
 \*/5 \* \* \* \* /mnt/storage/NVR/bin/nvr_alert.pl
+9. If you're using optional zwave/zigbee PIR sensors, make sure you configure
+them + setup the required app in Hubitat/SmartThings so that motion events make
+it back to your server. 
 </pre>
 Another option (which is what I do) is to setup your camera to email your
 Raspberry Pi/Linux box, then process those messages with procmail and have procmail trigger nvr_alert.pl.

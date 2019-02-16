@@ -22,8 +22,29 @@ if ($_REQUEST['event'] && (!preg_match('/^[0-9]+$/',$_REQUEST['event']))) {
 if (($_REQUEST['snapshot'] > 0) && (!preg_match('/^[0-9]+$/',$_REQUEST['snapshot']))) {
 	exit;
 } 
+if (($_REQUEST['cid'] > 0) && (!preg_match('/^[0-9]+$/',$_REQUEST['cid']))) {
+	exit;
+} 
 $token=$_REQUEST['auth'];
 $snapshot=$_REQUEST['snapshot'];
+$cid =$_REQUEST['cid'];
+$iPhone = stripos($_SERVER['HTTP_USER_AGENT'],"iPhone");
+$iPad = stripos($_SERVER['HTTP_USER_AGENT'],"iPad");
+
+if ($cid) {
+	$conn = new mysqli($db_server, $db_username, $db_password, $db_database);
+	$stmt = $conn->prepare("select location from cameras where cid=? and enabled=1");
+	$stmt->bind_param("s", $cid);
+	$stmt->execute();
+	$stmt->bind_result($my_location);
+	$stmt->fetch();
+    $stmt->close();
+}
+
+# check if valid camera
+if ($cid && !$my_location) {
+	exit;
+}
 
 if ($token) {
 	$conn = new mysqli($db_server, $db_username, $db_password, $db_database);
@@ -32,6 +53,10 @@ if ($token) {
 	$stmt->execute();
 	$stmt->bind_result($auth,$week,$is_admin);
 	$stmt->fetch();
+    $stmt->close();
+	#if ($auth >= 1) {
+	#	$auth = 1;
+	#}
 }
 
 if ($auth<1) {
@@ -67,6 +92,7 @@ if ($_REQUEST['suppress'] >= 0 && (preg_match('/^[0-9]+$/',$_REQUEST['suppress']
 		$stmt = $conn->prepare("delete from suppress where authkey=?");
 		$stmt->bind_param("s",$token);
 		$stmt->execute();
+    	$stmt->close();
 		echo "<center>Cleared alert suppression\n";
 	}	
 
@@ -76,6 +102,7 @@ if ($_REQUEST['suppress'] >= 0 && (preg_match('/^[0-9]+$/',$_REQUEST['suppress']
 		$stmt->bind_param("s",$token);
 		$stmt->execute();
         	$stmt->store_result();
+    		$stmt->close();
         	$count = $stmt->num_rows;
 
 		 if ($count>0) {
@@ -83,12 +110,14 @@ if ($_REQUEST['suppress'] >= 0 && (preg_match('/^[0-9]+$/',$_REQUEST['suppress']
 			$stmt = $conn->prepare("update suppress set expiration=? where authkey=?");
 			$stmt->bind_param("ss", $dateFormatted,$token);
 			$stmt->execute();
+    		$stmt->close();
 			echo "<center>Updated alert suppression until $dateFormatted.";
 	 	} else {
 			$conn = new mysqli($db_server, $db_username, $db_password, $db_database);
 			$stmt = $conn->prepare("insert into suppress VALUES(?,?)");
 			$stmt->bind_param("ss", $token,$dateFormatted);
 			$stmt->execute();
+    		$stmt->close();
 			echo "<center>Set alert suppression until $dateFormatted.";
 	 	}
 	}
@@ -108,6 +137,7 @@ if ($is_admin && $auth && $_REQUEST['admin'] == 1) {
 	    #echo "$image $date\n<br>";
 			$count++;
 	}
+    $stmt->close();
 }
 if ($suppress && $token) {
 	?>
@@ -124,15 +154,22 @@ if ($suppress && $token) {
 exit;
 }
 	
+if ($_REQUEST['events'] == 2) {
+	$request=1;
+} else {
+	$request=2;
+}
+
 ?>
 <title>Video Camera Monitor</title>
 <center>
-[ <a href="index.php?events=1&auth=<?=$_REQUEST['auth']?>">Events</a> | 
+[ <a href="index.php?events=<?=$request?>&auth=<?=$_REQUEST['auth']?>">Events</a> | 
 <a href="index.php?time=suppress&auth=<?=$_REQUEST['auth']?>">Suppress Alerts</a> | 
 <a href="index.php?auth=<?=$_REQUEST['auth']?>">10 Minutes</a> | 
 <a href="index.php?time=hour&auth=<?=$_REQUEST['auth']?>">Hour</a> | 
 <a href="index.php?time=half&auth=<?=$_REQUEST['auth']?>">12 Hours</a> | 
-<a href="index.php?time=day&auth=<?=$_REQUEST['auth']?>">24 Hours</a>
+<a href="index.php?time=day&auth=<?=$_REQUEST['auth']?>">24 Hours</a> | 
+<a href="geohopper.php?&auth=<?=$_REQUEST['auth']?>&fix=1">Fix Me</a> 
 <?php 
 	if ($week == 1) {
 ?>
@@ -153,11 +190,13 @@ exit;
 	$stmt = $conn->prepare("select max(eventId) from images");
 	$stmt->execute();
 	$stmt->bind_result($eventId);
-        $stmt->fetch();
+    $stmt->fetch();
+	$stmt->close();
 	$conn = new mysqli($db_server, $db_username, $db_password, $db_database);
 	$stmt = $conn->prepare("update images set eventId=? where eventId=0");
 	$stmt->bind_param("s", $eventId);
 	$stmt->execute();
+	$stmt->close();
 
 	$conn = new mysqli($db_server, $db_username, $db_password, $db_database);
 	$stmt = $conn->prepare("select cid,location from cameras where enabled=1 and snapshot_url != ''");
@@ -171,19 +210,26 @@ exit;
 	while($stmt->fetch()){
 		$count++;
 		?>
-		<a href="index.php?snapshot=<?=$cid?>&auth=<?=$_REQUEST['auth']?>">Snapshot <?=$location?></a> 
+		<a href="index.php?snapshot=<?=$cid?>&auth=<?=$_REQUEST['auth']?>"><img
+src=/cam/snapshot_icon.png height=2%></a> 
+<?php if ($_REQUEST['time']) {
+
+	?> 
+	<a href="index.php?cid=<?=$cid?>&auth=<?=$_REQUEST['auth']?>&time=<?=$_REQUEST['time']?>"><img
+src=/cam/filter_icon.png height=2%></a><?php } ?> <?=$location?></a> 
 		<?php
 		if ($num_of_rows > 1 && $count < $num_of_rows) {
 			echo " | ";
 		}
 	}
+    $stmt->close();
 
 	?> ] <br> <br><br>
 <?php
 
 if ($snapshot > 0) {
 	echo "<a border=0 href=image.php?&snapshot=" . $snapshot .  "&auth=". $_REQUEST['auth'] . "><center><img width=100% src=image.php?snapshot=". $snapshot . "&auth=" . $_REQUEST['auth'] . "></a>";
-} else if ($_REQUEST['events'] == 1) {
+} else if ($_REQUEST['events'] >= 1) {
 	$count=0;
 	$conn = new mysqli($db_server, $db_username, $db_password, $db_database);
 	$query="select distinct(user),lastNotify,isHome,homeTime from users";
@@ -208,9 +254,38 @@ if ($snapshot > 0) {
 		<?php
 	}
 	echo "</table><br>";
+	$stmt->close();
+
 	$count=0;
 	$conn = new mysqli($db_server, $db_username, $db_password, $db_database);
-	$query="select distinct(eventId) from images where 1 order by date desc";
+	$query="select location,pirTime from cameras where pirName!=''";
+	$stmt = $conn->prepare($query);
+	$stmt->execute();
+	$stmt->bind_result($location,$pirTime);
+	while($stmt->fetch()){
+		$count++;
+		if ($count == 1) {
+			?><table width=40% border=1 cellspacing=0 cellpadding=0><tr>
+			<td><center><b>Camera</td>
+			<td><center><b>Last Motion Detection (PIR)</td></tr>
+				<?php
+		}
+                 ?><tr><td align=center><?=$location?></td><td><center><?=$pirTime?></td></tr>
+		<?php
+	}
+	echo "</table><br>";
+	$stmt->close();
+	$count=0;
+	$conn = new mysqli($db_server, $db_username, $db_password, $db_database);
+	if ($_REQUEST['events'] == 2) {
+		#$notified="1 and notified >0";
+		$notified="DATE_SUB(NOW(),INTERVAL 1 WEEK) <= date and notified >0";
+	} else {
+		#$notified="1";
+		$notified="DATE_SUB(NOW(),INTERVAL 1 WEEK) <= date";
+	}
+	$query="select distinct(eventId) from images where $notified order by date desc";
+	#echo $query;
 	$stmt = $conn->prepare($query);
 	$stmt->execute();
 	$stmt->bind_result($eventId);
@@ -245,29 +320,40 @@ if ($snapshot > 0) {
 			  <td><center><?=$secs?></td></tr>
 		<?php
 		}
+	 	$stmt2->close();
 	}
+    $stmt->close();
 } else {
 	$count=0;
 	$conn = new mysqli($db_server, $db_username, $db_password, $db_database);
+
+	if ($my_location) {
+		$my_location = "and location='$my_location'";
+	} else {
+		$my_location = "";
+	}
 	if ($_REQUEST['event']) {
-		$query="select image,date,notified from images where eventId=? order by date desc";
+		$query="select image,date,notified from images where eventId=? and DATE_SUB(NOW(),INTERVAL 1 WEEK) <= date $my_location order by date desc";
+		#print $query;
 		$stmt = $conn->prepare($query);
 		$stmt->bind_param("s", $_REQUEST['event']);
 	} else {
-		$query="select image,date,notified from images where DATE_SUB(NOW(),INTERVAL $last) <= date order by date desc";
+		$query="select image,date,notified from images where DATE_SUB(NOW(),INTERVAL $last) <= date $my_location order by date desc";
+		#print $query;
 		$stmt = $conn->prepare($query);
 	}
 	$stmt->execute();
 	$stmt->bind_result($image,$date,$notified);
 	#$stmt->fetch();
 	while($stmt->fetch()){
-	    #echo "$image $date\n<br>";
+	   #echo "$image $date\n<br>";
 			$count++;
 			$image = $webdir . "/" . $image;
 			if ($count == 1) {
 				?><table width=100% border=1 cellspacing=0 cellpadding=0><tr>
 				<?php
 			}
+			if ($iPhone || $iPad) { $count=2; }
 			if ($count % 2) {
 			?>
 				<td align=center><a border=0 href="<?=$image?>"><img width=100% src="<?=$image?>"></a><br>
@@ -294,6 +380,7 @@ if ($snapshot > 0) {
 			}
 			#print "$key\n";
 	}
+	$stmt->close();
 	?></table><?php
 }
 

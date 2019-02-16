@@ -34,6 +34,8 @@ CREATE TABLE IF NOT EXISTS `cameras` (
   `ignore_ranges` varchar(100) NOT NULL,
   `ignoreHome` int(11) NOT NULL,
   `ignoreAway` int(11) NOT NULL,
+  `pirName` varchar(30) NOT NULL,
+  `pirTime` datetime NOT NULL,
   PRIMARY KEY (`cid`),
   UNIQUE KEY `name` (`location`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=3 ;
@@ -50,6 +52,7 @@ CREATE TABLE IF NOT EXISTS `images` (
   `date` datetime NOT NULL,
   `location` varchar(25) NOT NULL,
   `notified` int(11) NOT NULL DEFAULT '0',
+  `eventId` int(11) DEFAULT NULL,
   PRIMARY KEY (`image`),
   UNIQUE KEY `id` (`id`),
   UNIQUE KEY `image` (`image`)
