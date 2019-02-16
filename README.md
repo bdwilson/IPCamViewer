@@ -174,10 +174,11 @@ having issues.
 *max_notify_interval* is set to 5.
 <pre>
 \*/5 \* \* \* \* /mnt/storage/NVR/bin/nvr_alert.pl
+</pre>
 9. If you're using optional zwave/zigbee PIR sensors, make sure you configure
 them + setup the required app in Hubitat/SmartThings so that motion events make
 it back to your server. 
-</pre>
+
 Another option (which is what I do) is to setup your camera to email your
 Raspberry Pi/Linux box, then process those messages with procmail and have procmail trigger nvr_alert.pl.
 If you choose to go that route, you can use the nvr_procmail.sh script to call
