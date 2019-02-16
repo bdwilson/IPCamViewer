@@ -92,7 +92,7 @@ these to 1 instead of 0. These variable rely on the GeoHopper dependancy.
 <pre>
 mysql> select * from cameras;
 +-----+-------------+---------+---------------------------------------------------------------------+-----------------+------------+----------------------+-------------+
-| cid | location    | enabled | snapshot_url 							   | ignore_ranges   | ignoreHome | ignoreAway | pirName | pirTime     |
+| cid | location    | enabled | snapshot_url 		  					    | ignore_ranges   | ignoreHome | ignoreAway | pirName | pirTime     |
 +-----+-------------+---------+---------------------------------------------------------------------+-----------------+------------+------------+---------+-------------+
 |   1 | Front Porch |       1 | http://user:password@192.168.2.7/Streaming/channels/1/picture       |                 |          0 |          0 |         |             |
 |   2 | Garage      |       1 | http://user:password@192.168.2.2/Streaming/channels/1/picture       | 22-23,3:30-4:30 |          0 |          0 |         |             |
