@@ -179,7 +179,8 @@ having issues.
 them + setup the required app in Hubitat/SmartThings so that motion events make
 it back to your server. 
 10. If you need to access snapshot images directly (i.e. image file vs.
-embedded in the GUI), you can use snapshot.php to do this.  http://server/url/snapshot.php?snapshot=2&auth=YOURAUTHID
+embedded in the GUI), you can use snapshot.php to do this.
+http://server/url/image.php?snapshot=2&auth=YOURAUTHID
 
 Another option (which is what I do) is to setup your camera to email your
 Raspberry Pi/Linux box, then process those messages with procmail and have procmail trigger nvr_alert.pl.
