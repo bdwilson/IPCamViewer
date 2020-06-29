@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS `cameras` (
   `ignoreAway` int(11) NOT NULL,
   `pirName` varchar(30) NOT NULL,
   `pirTime` datetime NOT NULL,
+  `isAmcrest` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`cid`),
   UNIQUE KEY `name` (`location`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=3 ;

@@ -12,7 +12,9 @@ the ability to suppress notifications for some period of time from your phone
 currently use these with my Hikvision cameras since their built-in motion
 detection + built NVR capabilities in writing to SMB shares.  This allows me to
 do all of my monitoring (Web server, MySQL, VSFTP, SMB) on a Raspberry Pi with
-an external drive. 
+an external drive (also tentatively working with Amcrest cameras - adjust
+cameras entry in database and set isAmcrest to 1 if you have an Amcrest
+camera).
 
 Screen Shots
 ---------
@@ -91,12 +93,12 @@ all users are Away. If you want to suppress events for the camera, then toggle
 these to 1 instead of 0. These variable rely on the GeoHopper dependancy.
 <pre>
 mysql> select * from cameras;
-+-----+-------------+---------+---------------------------------------------------------------------+-----------------+------------+----------------------+-------------+
-| cid | location    | enabled | snapshot_url 		  					    | ignore_ranges   | ignoreHome | ignoreAway | pirName | pirTime     |
-+-----+-------------+---------+---------------------------------------------------------------------+-----------------+------------+------------+---------+-------------+
-|   1 | Front Porch |       1 | http://user:password@192.168.2.7/Streaming/channels/1/picture       |                 |          0 |          0 |         |             |
-|   2 | Garage      |       1 | http://user:password@192.168.2.2/Streaming/channels/1/picture       | 22-23,3:30-4:30 |          0 |          0 |         |             |
-+-----+-------------+---------+---------------------------------------------------------------------+-----------------+------------+------------+---------+-------------+
++-----+-------------+---------+---------------------------------------------------------------------+-----------------+------------+----------------------+-------------+-------------+
+| cid | location    | enabled | snapshot_url 		  					                            | ignore_ranges   | ignoreHome | ignoreAway | pirName | pirTime     | isAmcrest   |
++-----+-------------+---------+---------------------------------------------------------------------+-----------------+------------+------------+---------+-------------+-------------+
+|   1 | Front Porch |       1 | http://user:password@192.168.2.7/Streaming/channels/1/picture       |                 | 0          |          0 |         |             | 0           |
+|   2 | Garage      |       1 | http://user:password@192.168.2.2/Streaming/channels/1/picture       | 22-23,3:30-4:30 |          0 |          0 |         |             | 0           |
++-----+-------------+---------+---------------------------------------------------------------------+-----------------+------------+------------+---------+-------------ا-------------+
 mysql> select * from users;
 +-----+--------+-----------------+---------+-------+------+--------------------------------+--------------------------------+---------------------+--------+---------------------+
 | uid | user   | authkey         | enabled | admin | week | pushoverApp                    | pushoverKey                    | lastNotify          | isHome | homeTime            |
@@ -126,8 +128,8 @@ single location, you can use one PIR sensor by giving them the same name
 <pre>
 $ mysql -u cam -pcam
 mysql> use cam;
-mysql> insert into cameras VALUES("","Front Porch","1","http://user:password@192.168.2.7/Streaming/channels/1/picture","",0,0,"","");
-mysql> insert into cameras VALUES("","Back Porch","1","http://user:password@192.168.2.7/Streaming/channels/1/picture","17-18,4:30-5:30",0,0,"","");
+mysql> insert into cameras VALUES("","Front Porch","1","http://user:password@192.168.2.7/Streaming/channels/1/picture","",0,0,"","",0);
+mysql> insert into cameras VALUES("","Back Porch","1","http://user:password@192.168.2.7/Streaming/channels/1/picture","17-18,4:30-5:30",0,0,"","", 0);
 mysql> insert into users VALUES("","user1","8675309","1","0","YOUR_PUSHOVER_APP_ID_HERE","YOUR_PUSHOVER_API_KEY_HERE","",0,"");
 mysql> insert into users VALUES("","user2","C3PO","1","1","YOUR_PUSHOVER_APP_ID_HERE","YOUR_PUSHOVER_API_KEY_HERE","",0,"");
 mysql> quit
