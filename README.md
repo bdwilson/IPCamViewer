@@ -9,12 +9,10 @@ exclude notifications around sunrise/sunset times. It includes rudimentry
 authentication so you can limit who can access your notifications as well as
 the ability to suppress notifications for some period of time from your phone
 (i.e. in case you're expecting lots of movement for a particular period). I
-currently use these with my Hikvision cameras since their built-in motion
+currently use these with my Hikvision and Amcrest cameras since their built-in motion
 detection + built NVR capabilities in writing to SMB shares.  This allows me to
-do all of my monitoring (Web server, MySQL, VSFTP, SMB) on a Raspberry Pi with
-an external drive (also tentatively working with Amcrest cameras - adjust
-cameras entry in database and set isAmcrest to 1 if you have an Amcrest
-camera).
+do all of my monitoring (Web server, MySQL, VSFTP, SMB, Exim) on a Raspberry Pi with
+an external drive. 
 
 Screen Shots
 ---------
@@ -40,7 +38,7 @@ well spent.
 - FTP Server - This script expects each camera to store images in a
   sub-directory.
 - An IP camera that supports FTP of images when motion is triggered and
-  optionally a URL to display a real-time snapshot.
+  optionally a URL to display a real-time snapshot and also sending of email when an event happens - see below in calling the procmail script)
 - Some method of calling the alert script (cronjob or via e-mail based procmail
   trigger)
 - Perl (and these modules: File::Basename File::Find File::stat Date::Manip Time::localtime LWP::UserAgent Astro::Sunrise Data::Dumper DBI)
